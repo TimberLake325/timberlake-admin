@@ -1,0 +1,181 @@
+@import "tailwindcss";
+
+:root {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-accent: var(--accent);
+}
+
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+@keyframes gradient-move {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* reusable utility */
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-move 4s ease infinite;
+}
+
+.accent-radial-glow {
+  background: radial-gradient(circle,
+      rgb(var(--color-accent) / 1) 0%,
+      rgb(var(--color-accent) / 0.35) 35%,
+      rgb(var(--color-accent) / 0.15) 55%,
+      transparent 70%);
+}
+
+/* Add to globals.css if not using Tailwind JIT arbitrary values */
+.grid-template-rows-\[0fr\] {
+  grid-template-rows: 0fr;
+}
+
+.grid-template-rows-\[1fr\] {
+  grid-template-rows: 1fr;
+}
+
+@layer base {
+  button {
+    @apply cursor-pointer;
+  }
+}
+
+/* Lexical Editor Styles */
+.editor-paragraph {
+  margin: 0 0 8px;
+  position: relative;
+}
+
+.editor-text-bold {
+  font-weight: bold;
+}
+
+.editor-text-italic {
+  font-style: italic;
+}
+
+.editor-text-underline {
+  text-decoration: underline;
+}
+
+.editor-text-strikethrough {
+  text-decoration: line-through;
+}
+
+.editor-list-ol {
+  padding: 0;
+  margin: 0 0 0 16px;
+  list-style-type: decimal;
+}
+
+.editor-list-ul {
+  padding: 0;
+  margin: 0 0 0 16px;
+  list-style-type: disc;
+}
+
+.editor-listitem {
+  margin: 0 32px 0 32px;
+}
+
+.editor-link {
+  color: #2563eb;
+  text-decoration: none;
+}
+
+.editor-link:hover {
+  text-decoration: underline;
+}
+
+.editor-quote {
+  margin: 0 0 16px;
+  padding: 0 0 0 16px;
+  border-left: 4px solid rgba(139, 92, 246, 0.2);
+  color: #64748b;
+  font-style: italic;
+}
+
+.editor-heading-h1 {
+  font-size: 1.5rem;
+  font-weight: 900;
+  margin: 16px 0 8px;
+  text-transform: uppercase;
+  letter-spacing: -0.025em;
+}
+
+.editor-heading-h2 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin: 14px 0 6px;
+  text-transform: uppercase;
+  letter-spacing: -0.025em;
+}
+
+.editor-heading-h3 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin: 12px 0 4px;
+  text-transform: uppercase;
+  letter-spacing: -0.025em;
+}
+
+.editor-align-left {
+  text-align: left;
+}
+
+.editor-align-center {
+  text-align: center;
+}
+
+.editor-align-right {
+  text-align: right;
+}
+
+.editor-align-justify {
+  text-align: justify;
+}
+
+.editor-nested-listitem {
+  list-style-type: none;
+}
+
+.editor-nested-listitem:before {
+  display: none;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
