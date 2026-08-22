@@ -93,7 +93,7 @@ const UserContent = () => {
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [formData, setFormData] = useState<Partial<User>>({});
-
+    console.log('selectedUser -- ', selectedUser);
     const fetchUsers = async (page = 1) => {
         setLoading(true);
         try {
@@ -428,7 +428,7 @@ const UserContent = () => {
 
             {selectedUser && (
                 <div className="fixed inset-0 bg-black/10 backdrop-blur-sm flex items-center justify-center z-50">
-                    <div className="bg-white border border-black/[0.06] rounded-[2rem] w-full w-full mx-4 max-h-[90vh] overflow-y-auto">
+                    <div className="bg-white border border-black/[0.06] rounded-[2rem] w-full w-full mx-4 max-h-[90vh] max-w-2xl overflow-y-auto">
                         <div className="flex justify-between items-center p-8 border-b border-black/[0.06]">
                             <div>
                                 <h3 className="text-[13px] font-black uppercase tracking-[0.3em] text-black mb-1">USER DETAILS</h3>
@@ -464,19 +464,19 @@ const UserContent = () => {
                                         <div className="text-xs text-black">{field.value}</div>
                                     </div>
                                 ))}
-                                <div className="md:col-span-2 p-4 bg-black/[0.01] border border-black/[0.04] rounded-xl">
+                                {/* <div className="md:col-span-2 p-4 bg-black/[0.01] border border-black/[0.04] rounded-xl">
                                     <div className="flex items-center gap-2 mb-2">
                                         <FiFileText size={12} className="text-[#2563eb]" />
                                         <span className="text-[9px] font-black uppercase tracking-[0.2em] text-black/40">Project Details</span>
                                     </div>
                                     <div className="text-xs text-black whitespace-pre-wrap">{selectedUser.projectDetails}</div>
-                                </div>
+                                </div> */}
                                 <div className="md:col-span-2 p-4 bg-black/[0.01] border border-black/[0.04] rounded-xl">
                                     <div className="flex items-center gap-2 mb-2">
                                         <FiMessageSquare size={12} className="text-[#2563eb]" />
-                                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-black/40">Internal Notes</span>
+                                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-black/40">Message</span>
                                     </div>
-                                    <div className="text-xs text-black whitespace-pre-wrap">{selectedUser.internalNotes || '-'}</div>
+                                    <div className="text-xs text-black whitespace-pre-wrap">{selectedUser.message || '-'}</div>
                                 </div>
                                 <div className="md:col-span-2 p-4 bg-black/[0.01] border border-black/[0.04] rounded-xl">
                                     <div className="flex items-center gap-2 mb-2">

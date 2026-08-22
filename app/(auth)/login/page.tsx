@@ -46,14 +46,14 @@ export default function LoginPage() {
         setIsPending(true);
 
         try {
-            // const response = await login(email, password, navigator.userAgent);
-            // if (response.success) {
-            //     const searchParams = new URLSearchParams(window.location.search);
-            //     const callbackUrl = searchParams.get('callbackUrl') || '/admin/dashboard';
-            //     router.push(callbackUrl);
-            // } else {
-            //     setErrorMessage(response.message || 'Login failed. Please try again.');
-            // }
+            const response = await login(email, password, navigator.userAgent);
+            if (response.success) {
+                const searchParams = new URLSearchParams(window.location.search);
+                const callbackUrl = searchParams.get('callbackUrl') || '/admin/dashboard';
+                router.push(callbackUrl);
+            } else {
+                setErrorMessage(response.message || 'Login failed. Please try again.');
+            }
         } catch (error) {
             console.error('Login error:', error);
             setErrorMessage('Login failed. Please check your connection and try again.');
