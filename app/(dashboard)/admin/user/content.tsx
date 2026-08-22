@@ -24,6 +24,7 @@ interface User {
     followUpDate?: string;
     communicationHistory?: any[];
     createdAt: string;
+    message?: string;
 }
 
 const InputField = ({ label, value, onChange, placeholder, type = "text", isTextArea = false, isSelect = false, options = [] }: any) => (
