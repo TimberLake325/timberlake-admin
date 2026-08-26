@@ -92,6 +92,31 @@ export async function deleteBlogCategory(id: string, permanent = false) {
     }
 }
 
+export async function restoreBlogCategory(id: string) {
+    await dbConnect();
+    try {
+        const category = await BlogCategory.findById(id);
+        if (!category) return { success: false, message: "Category not found" };
+        if (!category.isDeleted) return { success: false, message: "Category is not deleted" };
+
+        await BlogCategory.findByIdAndUpdate(id, {
+            isDeleted: false,
+            $unset: { deletedAt: 1 }
+        });
+
+        // Also restore associated blog posts
+        await BlogPost.updateMany(
+            { category: id, isDeleted: true },
+            { isDeleted: false, $unset: { deletedAt: 1 } }
+        );
+
+        return { success: true, message: "Category and associated posts restored successfully" };
+    } catch (error: any) {
+        console.error("Error restoring category:", error);
+        return { success: false, message: error.message || "Failed to restore category" };
+    }
+}
+
 export async function getBlogPostById(id: string) {
     await dbConnect();
     try {
@@ -281,5 +306,33 @@ export async function deleteBlogPost(id: string, permanent = false) {
     } catch (error: any) {
         console.error("Error deleting post:", error);
         return { success: false, message: "Failed to delete post" };
+    }
+}
+
+
+export async function restoreBlogPost(id: string) {
+    await dbConnect();
+    try {
+        const post = await BlogPost.findById(id);
+        if (!post) return { success: false, message: "Post not found" };
+        if (!post.isDeleted) return { success: false, message: "Post is not deleted" };
+
+        await BlogPost.findByIdAndUpdate(id, {
+            isDeleted: false,
+            $unset: { deletedAt: 1 }
+        });
+
+        // Optionally, re-add to sitemap if needed, since soft-delete removes it
+        const blogUrl = `/blogs/${post.slug}`;
+        await updateSitemapLink("Blogs", {
+            name: post.title,
+            href: blogUrl,
+            description: post.excerpt
+        });
+
+        return { success: true, message: "Post restored successfully" };
+    } catch (error: any) {
+        console.error("Error restoring post:", error);
+        return { success: false, message: error.message || "Failed to restore post" };
     }
 }

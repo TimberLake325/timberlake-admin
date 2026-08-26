@@ -3,10 +3,10 @@
 import ConfirmationModal from '@/components/global/ConfirmationModal';
 import PageHeader from '@/components/global/PageHeader';
 import { useToast } from '@/components/global/Toast';
-import { deleteServiceCategory, getServiceCategories } from '@/services/serviceService';
+import { deleteServiceCategory, getServiceCategories, restoreServiceCategory } from '@/services/serviceService';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { FiEdit3, FiLayers, FiPlus, FiTrash2, FiX } from 'react-icons/fi';
+import { FiArchive, FiEdit3, FiLayers, FiPlus, FiRefreshCw, FiTrash2 } from 'react-icons/fi';
 interface CategoriesContentProps {
     initialCategories: any[];
 }
@@ -49,6 +49,16 @@ const CategoriesContent = ({ initialCategories }: CategoriesContentProps) => {
         setItemToDelete(null);
     };
 
+    const handleRestore = async (id: string) => {
+        const res = await restoreServiceCategory(id);
+        if (res.success) {
+            showToast(res.message, 'success');
+            refreshCategories();
+        } else {
+            showToast(res.message, 'error');
+        }
+    };
+
     return (
         <div className="p-3 lg:p-6 bg-[#fcfcfc] min-h-screen">
             <PageHeader
@@ -75,11 +85,17 @@ const CategoriesContent = ({ initialCategories }: CategoriesContentProps) => {
                                             <button onClick={() => handleEditClick(cat._id)} className="p-2 text-black/10 hover:text-blue-600">
                                                 <FiEdit3 size={16} />
                                             </button>
-                                            <button onClick={() => setItemToDelete({ id: cat._id, permanent: false })} className="p-2 text-black/10 hover:text-orange-500">
+                                            {cat.isDeleted ? (
+                                                <button onClick={() => handleRestore(cat._id)} className="p-2 text-black/10 hover:text-green-600" title="Restore Category">
+                                                    <FiRefreshCw size={16} />
+                                                </button>
+                                            ) : (
+                                                <button onClick={() => setItemToDelete({ id: cat._id, permanent: false })} className="p-2 text-black/10 hover:text-orange-500" title="Soft Delete">
+                                                    <FiArchive size={16} />
+                                                </button>
+                                            )}
+                                            <button onClick={() => setItemToDelete({ id: cat._id, permanent: true })} className="p-2 text-black/10 hover:text-red-500" title="Permanent Delete">
                                                 <FiTrash2 size={16} />
-                                            </button>
-                                            <button onClick={() => setItemToDelete({ id: cat._id, permanent: true })} className="p-2 text-black/10 hover:text-red-500">
-                                                <FiX size={16} />
                                             </button>
                                         </div>
                                     </div>
@@ -88,9 +104,14 @@ const CategoriesContent = ({ initialCategories }: CategoriesContentProps) => {
                                     <p className="text-[11px] text-black/60 line-clamp-2">{cat.description?.replace(/<[^>]*>?/gm, '') || 'No description provided.'}</p>
                                 </div>
                                 <div className="mt-6 pt-4 border-t border-black/[0.03] flex justify-between items-center">
-                                    <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${cat.status === 'Active' ? 'bg-emerald-50 text-emerald-600' : 'bg-orange-50 text-orange-600'}`}>
-                                        {cat.status}
-                                    </span>
+                                    <div className="flex items-center gap-2">
+                                        <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${cat.status === 'Active' ? 'bg-emerald-50 text-emerald-600' : 'bg-orange-50 text-orange-600'}`}>
+                                            {cat.status}
+                                        </span>
+                                        {cat.isDeleted && (
+                                            <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-red-50 text-red-500">Deleted</span>
+                                        )}
+                                    </div>
                                     <span className="text-[8px] text-black/20 font-black uppercase tracking-widest">
                                         Order: {cat.displayOrder || 0}
                                     </span>

@@ -138,6 +138,25 @@ export async function deleteServiceCategory(id: string, permanent = false) {
     }
 }
 
+export async function restoreServiceCategory(id: string) {
+    await dbConnect();
+    try {
+        const category = await ServiceCategory.findById(id);
+        if (!category) return { success: false, message: "Category not found" };
+        if (!category.isDeleted) return { success: false, message: "Category is not deleted" };
+
+        await ServiceCategory.findByIdAndUpdate(id, {
+            isDeleted: false,
+            $unset: { deletedAt: 1 }
+        });
+
+        return { success: true, message: "Category restored successfully" };
+    } catch (error: any) {
+        console.error("Error restoring category:", error);
+        return { success: false, message: error.message || "Failed to restore category" };
+    }
+}
+
 export async function getServices(includeDeleted = false, categoryId?: string) {
     await dbConnect();
     try {

@@ -3,9 +3,9 @@
 import ConfirmationModal from '@/components/global/ConfirmationModal';
 import PageHeader from '@/components/global/PageHeader';
 import { useToast } from '@/components/global/Toast';
-import { deleteBlogCategory } from '@/services/blogService';
+import { deleteBlogCategory, restoreBlogCategory } from '@/services/blogService';
 import { useEffect, useState } from 'react';
-import { FiEdit3, FiLayers, FiPlus, FiTrash2, FiX } from 'react-icons/fi';
+import { FiArchive, FiEdit3, FiLayers, FiPlus, FiRefreshCw, FiTrash2, FiX } from 'react-icons/fi';
 import BlogForm from '../pageData';
 
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -82,6 +82,16 @@ const CategoriesContent = ({ initialCategories, initialTotal = 0 }: CategoriesCo
         setItemToDelete(null);
     };
 
+    const handleRestore = async (id: string) => {
+        const res = await restoreBlogCategory(id);
+        if (res.success) {
+            showToast(res.message, 'success');
+            fetchCategories(currentPage);
+        } else {
+            showToast(res.message, 'error');
+        }
+    };
+
     return (
         <div className="p-3 lg:p-6 bg-[#fcfcfc] min-h-screen">
             <PageHeader
@@ -105,15 +115,21 @@ const CategoriesContent = ({ initialCategories, initialTotal = 0 }: CategoriesCo
                                         <div className="p-3 bg-[#2563eb]/5 text-[#2563eb] rounded-2xl">
                                             <FiLayers size={20} />
                                         </div>
-                                        <div className="flex gap-1">
-                                            <button onClick={() => handleEditClick(cat._id)} className="p-2 text-black/10 hover:text-[#2563eb] transition-all">
-                                                <FiEdit3 size={16} />
+                                        <div className="flex items-center gap-2">
+                                            <button onClick={() => handleEditClick(cat._id)} className="p-3 text-black/20 hover:text-[#2563eb] hover:bg-[#2563eb]/5 rounded-xl transition-all">
+                                                <FiEdit3 size={18} />
                                             </button>
-                                            <button onClick={() => setItemToDelete({ id: cat._id, permanent: false })} className="p-2 text-black/10 hover:text-orange-500 transition-all">
-                                                <FiTrash2 size={16} />
-                                            </button>
-                                            <button onClick={() => setItemToDelete({ id: cat._id, permanent: true })} className="p-2 text-black/10 hover:text-red-500 transition-all">
-                                                <FiX size={16} />
+                                            {cat.isDeleted ? (
+                                                <button onClick={() => handleRestore(cat._id)} className="p-3 text-black/20 hover:text-green-600 hover:bg-green-50 rounded-xl transition-all" title="Restore Category">
+                                                    <FiRefreshCw size={18} />
+                                                </button>
+                                            ) : (
+                                                <button onClick={() => setItemToDelete({ id: cat._id, permanent: false })} className="p-3 text-black/20 hover:text-orange-500 hover:bg-orange-50 rounded-xl transition-all" title="Soft Delete">
+                                                    <FiArchive size={18} />
+                                                </button>
+                                            )}
+                                            <button onClick={() => setItemToDelete({ id: cat._id, permanent: true })} className="p-3 text-black/20 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all" title="Permanent Delete">
+                                                <FiTrash2 size={18} />
                                             </button>
                                         </div>
                                     </div>
@@ -122,9 +138,14 @@ const CategoriesContent = ({ initialCategories, initialTotal = 0 }: CategoriesCo
                                     <p className="text-[11px] text-black/60 line-clamp-2">{cat.description || 'No description provided.'}</p>
                                 </div>
                                 <div className="mt-6 pt-4 border-t border-black/[0.03] flex justify-between items-center">
-                                    <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${cat.isActive ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
-                                        {cat.isActive ? 'Active' : 'Inactive'}
-                                    </span>
+                                    <div className="flex items-center gap-2">
+                                        <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${cat.isActive ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+                                            {cat.isActive ? 'Active' : 'Inactive'}
+                                        </span>
+                                        {cat.isDeleted && (
+                                            <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-red-50 text-red-500">Deleted</span>
+                                        )}
+                                    </div>
                                     <span className="text-[8px] text-black/20 font-black uppercase tracking-widest">
                                         {new Date(cat.createdAt).toLocaleDateString()}
                                     </span>

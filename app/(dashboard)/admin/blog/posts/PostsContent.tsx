@@ -3,10 +3,10 @@
 import ConfirmationModal from '@/components/global/ConfirmationModal';
 import PageHeader from '@/components/global/PageHeader';
 import { useToast } from '@/components/global/Toast';
-import { deleteBlogPost } from '@/services/blogService';
+import { deleteBlogPost, restoreBlogPost } from '@/services/blogService';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
-import { FiChevronLeft, FiChevronRight, FiEdit3, FiPlus, FiSearch, FiTrash2, FiX } from 'react-icons/fi';
+import { FiArchive, FiChevronLeft, FiChevronRight, FiEdit3, FiPlus, FiRefreshCw, FiSearch, FiTrash2, FiX } from 'react-icons/fi';
 import BlogForm from '../pageData';
 
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -99,6 +99,16 @@ const PostsContent = ({ initialCategories, initialPosts, initialTotal }: PostsCo
         setItemToDelete(null);
     };
 
+    const handleRestore = async (id: string) => {
+        const res = await restoreBlogPost(id);
+        if (res.success) {
+            showToast(res.message, 'success');
+            fetchPosts(currentPage);
+        } else {
+            showToast(res.message, 'error');
+        }
+    };
+
     return (
         <div className="p-3 lg:p-6 bg-[#fcfcfc] min-h-screen">
             <PageHeader
@@ -170,6 +180,9 @@ const PostsContent = ({ initialCategories, initialPosts, initialTotal }: PostsCo
                                                 <span className="px-2 py-0.5 bg-[#2563eb]/5 text-[#2563eb] text-[8px] font-black uppercase tracking-tighter rounded-full">
                                                     {post.category?.name || "Uncategorized"}
                                                 </span>
+                                                {post.isDeleted && (
+                                                    <span className="px-2 py-0.5 bg-red-50 text-red-500 text-[10px] font-black uppercase tracking-tighter rounded-full">Deleted</span>
+                                                )}
 
                                                 <span className="text-[10px] text-black/20 font-bold uppercase tracking-tighter">
                                                     {new Date(post.publishDate).toLocaleDateString()}
@@ -194,22 +207,34 @@ const PostsContent = ({ initialCategories, initialPosts, initialTotal }: PostsCo
                                             <FiEdit3 size={16} />
                                         </button>
 
-                                        <button
-                                            onClick={() =>
-                                                setItemToDelete({ id: post._id, permanent: false })
-                                            }
-                                            className="p-2 sm:p-3 text-black/20 hover:text-orange-500 hover:bg-orange-50 rounded-xl transition-all"
-                                        >
-                                            <FiTrash2 size={16} />
-                                        </button>
+                                        {post.isDeleted ? (
+                                            <button
+                                                onClick={() => handleRestore(post._id)}
+                                                className="p-2 sm:p-3 text-black/20 hover:text-green-600 hover:bg-green-50 rounded-xl transition-all"
+                                                title="Restore Post"
+                                            >
+                                                <FiRefreshCw size={16} />
+                                            </button>
+                                        ) : (
+                                            <button
+                                                onClick={() =>
+                                                    setItemToDelete({ id: post._id, permanent: false })
+                                                }
+                                                className="p-2 sm:p-3 text-black/20 hover:text-orange-500 hover:bg-orange-50 rounded-xl transition-all"
+                                                title="Soft Delete"
+                                            >
+                                                <FiArchive size={16} />
+                                            </button>
+                                        )}
 
                                         <button
                                             onClick={() =>
                                                 setItemToDelete({ id: post._id, permanent: true })
                                             }
                                             className="p-2 sm:p-3 text-black/20 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                                            title="Permanent Delete"
                                         >
-                                            <FiX size={16} />
+                                            <FiTrash2 size={16} />
                                         </button>
                                     </div>
                                 </div>
