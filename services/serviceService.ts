@@ -306,3 +306,22 @@ export async function deleteService(id: string, permanent = false) {
         return { success: false, message: "Failed to delete service" };
     }
 }
+
+export async function restoreService(id: string) {
+    await dbConnect();
+    try {
+        const service = await Service.findById(id);
+        if (!service) return { success: false, message: "Service not found" };
+        if (!service.isDeleted) return { success: false, message: "Service is not deleted" };
+
+        await Service.findByIdAndUpdate(id, {
+            isDeleted: false,
+            $unset: { deletedAt: 1 }
+        });
+
+        return { success: true, message: "Service restored successfully" };
+    } catch (error: any) {
+        console.error("Error restoring service:", error);
+        return { success: false, message: error.message || "Failed to restore service" };
+    }
+}

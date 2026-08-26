@@ -1,171 +1,212 @@
-'use client';
+"use client";
 
-import { useRouter } from "next/navigation";
-import { useState, useEffect } from 'react';
-import { FiArrowRight, FiLock, FiMail, FiAlertCircle } from 'react-icons/fi';
-import { login } from '@/services/authService';
-import Link from 'next/link';
-import Image from "next/image";
+import ConfirmationModal from '@/components/global/ConfirmationModal';
+import PageHeader from '@/components/global/PageHeader';
+import { useToast } from '@/components/global/Toast';
+import { deleteService, restoreService } from '@/services/serviceService';
+import Image from 'next/image';
+import { redirect, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { FiArchive, FiEdit3, FiLayers, FiList, FiPlus, FiRefreshCw, FiSearch, FiTrash2, FiX } from 'react-icons/fi';
 
-export default function LoginPage() {
-    const [isPending, setIsPending] = useState(false);
-    const [errorMessage, setErrorMessage] = useState('');
-    const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+interface ServicesContentProps {
+    initialServices: any[];
+}
+
+const ServicesContent = ({ initialServices }: ServicesContentProps) => {
+    const { showToast } = useToast();
     const router = useRouter();
 
-    const validateForm = (email: string, password: string) => {
-        const errors: Record<string, string> = {};
+    const [services, setServices] = useState(initialServices);
+    const [categories, setCategories] = useState<any[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState('all');
+    const [itemToDelete, setItemToDelete] = useState<{ id: string, permanent: boolean } | null>(null);
 
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            errors.email = 'Please enter a valid email address';
-        }
-
-        if (password.length < 6) {
-            errors.password = 'Password must be at least 6 characters';
-        }
-
-        return errors;
-    };
-
-    const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        setErrorMessage('');
-        setValidationErrors({});
-
-        const formData = new FormData(e.currentTarget);
-        const email = (formData.get('email') as string || '').trim();
-        const password = formData.get('password') as string || '';
-
-        const errors = validateForm(email, password);
-        if (Object.keys(errors).length > 0) {
-            setValidationErrors(errors);
-            return;
-        }
-
-        setIsPending(true);
-
+    const fetchServices = async () => {
+        setLoading(true);
         try {
-            const response = await login(email, password, navigator.userAgent);
-            if (response.success) {
-                const searchParams = new URLSearchParams(window.location.search);
-                const callbackUrl = searchParams.get('callbackUrl') || '/admin/dashboard';
-                router.push(callbackUrl);
+            const res = await fetch(`/api/services`);
+            const data = await res.json();
+            if (data.success) {
+                setServices(data.data);
             } else {
-                setErrorMessage(response.message || 'Login failed. Please try again.');
+                showToast(data.message, 'error');
             }
         } catch (error) {
-            console.error('Login error:', error);
-            setErrorMessage('Login failed. Please check your connection and try again.');
+            showToast('Failed to fetch services', 'error');
         } finally {
-            setIsPending(false);
+            setLoading(false);
+        }
+    };
+
+    const fetchCategories = async () => {
+        try {
+            const res = await fetch('/api/services/categories');
+            const data = await res.json();
+            if (data.success) setCategories(data.data);
+        } catch (error) {
+            console.error("Failed to fetch categories", error);
+        }
+    };
+
+    useEffect(() => {
+        fetchCategories();
+    }, []);
+
+    const handleAddClick = () => {
+        router.push('/admin/services/new');
+    };
+
+    const handleEditClick = (id: string) => {
+        router.push(`/admin/services/${id}`);
+    };
+
+    const handleDelete = async () => {
+        if (!itemToDelete) return;
+        const { id, permanent } = itemToDelete;
+        const res = await deleteService(id, permanent);
+
+        if (res.success) {
+            showToast(res.message, 'success');
+            fetchServices();
+        } else {
+            showToast(res.message, 'error');
+        }
+        setItemToDelete(null);
+    };
+
+    const handleRestore = async (id: string) => {
+        const res = await restoreService(id);
+        if (res.success) {
+            showToast(res.message, 'success');
+            fetchServices();
+        } else {
+            showToast(res.message, 'error');
         }
     };
 
     return (
-        <div className="min-h-screen bg-[#fcfcfc] flex items-center justify-center p-6 relative overflow-hidden ">
-            <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none  bg-white">
-                <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-[#2563eb]/5 rounded-full blur-3xl animate-pulse" />
-                <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-black/[0.02] rounded-full blur-3xl" />
-            </div>
+        <div className="p-3 lg:p-6 bg-[#fcfcfc] min-h-screen">
+            <PageHeader
+                description="Manage your professional services"
+                onSave={handleAddClick}
+                actionLabel="Add Service"
+                icon={FiPlus}
+                pageClick={() => redirect('/admin/services/page')}
+                pageClickText="View Page"
+            />
 
-            <div className="w-full max-w-md bg-white border border-black/[0.06] rounded-[2rem] p-12 shadow-2xl relative z-10">
-                <div className="mb-10 text-center">
-                    <div className="w-fit h-fit p-2 text-white rounded-xl flex items-center justify-center mx-auto mb-6  text-xl font-black">
-                        <Image src="/images/logo.png" alt="Logo" width={180} height={180} />
+            <div className="mt-8">
+                <div className="flex flex-wrap gap-4 mb-6">
+                    <div className="relative flex-1 min-w-[200px]">
+                        <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-black/20" />
+                        <input
+                            type="text"
+                            placeholder="Search services..."
+                            className="w-full pl-12 pr-4 py-3 bg-white border border-black/[0.06] rounded-2xl text-xs focus:outline-none focus:border-[#2563eb]/30 transition-all font-medium"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
                     </div>
-                    <h1 className="text-3xl font-black tracking-tighter uppercase italic mb-2">
-                        Timberlake<span className="text-[#2563eb]">_</span>Admin
-                    </h1>
+                    <select
+                        className="px-6 py-3 bg-white border border-black/[0.06] rounded-2xl text-xs focus:outline-none focus:border-[#2563eb]/30 transition-all font-medium appearance-none"
+                        value={selectedCategory}
+                        onChange={(e) => setSelectedCategory(e.target.value)}
+                    >
+                        <option value="all">All Categories</option>
+                        {categories.map(cat => (
+                            <option key={cat._id} value={cat._id}>{cat.name}</option>
+                        ))}
+                    </select>
                 </div>
 
-                <form onSubmit={handleLogin} className="space-y-6" noValidate>
-                    <div className="space-y-4">
-                        <div>
-                            <label className="block text-[10px] font-black uppercase tracking-widest text-black mb-2" htmlFor="email">
-                                Email Address
-                            </label>
-                            <div className="relative">
-                                <input
-                                    className={`w-full bg-black/[0.02] border rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:bg-white transition-all text-black placeholder:text-black/20 ${validationErrors.email
-                                        ? 'border-red-500 focus:border-red-500'
-                                        : 'border-black/[0.06] focus:border-[#2563eb]/50'
-                                        }`}
-                                    id="email"
-                                    type="email"
-                                    name="email"
-                                    placeholder="admin@example.com"
-                                    required
-                                    disabled={isPending}
-                                    autoComplete="email"
-                                />
-                                <FiMail className="absolute right-4 top-1/2 -translate-y-1/2 text-black/20" size={16} />
-                            </div>
-                            {validationErrors.email && (
-                                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-                                    <FiAlertCircle size={14} /> {validationErrors.email}
-                                </p>
-                            )}
+                <div className="space-y-4">
+                    {services.length === 0 ? (
+                        <div className="p-12 text-center bg-white border border-black/[0.06] rounded-[2rem]">
+                            <p className="text-black/20 text-xs font-black uppercase tracking-widest">No services found</p>
                         </div>
-                        <div>
-                            <div className="flex justify-between items-center mb-2">
-                                <label className="block text-[10px] font-black uppercase tracking-widest text-black" htmlFor="password">
-                                    Password
-                                </label>
-                                <Link
-                                    href="/forgot-password"
-                                    className="text-[9px] font-black uppercase tracking-widest text-[#2563eb] hover:underline"
-                                >
-                                    Forgot Password?
-                                </Link>
-                            </div>
-                            <div className="relative">
-                                <input
-                                    className={`w-full bg-black/[0.02] border rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:bg-white transition-all text-black placeholder:text-black/20 ${validationErrors.password
-                                        ? 'border-red-500 focus:border-red-500'
-                                        : 'border-black/[0.06] focus:border-[#2563eb]/50'
-                                        }`}
-                                    id="password"
-                                    type="password"
-                                    name="password"
-                                    placeholder="••••••••"
-                                    required
-                                    disabled={isPending}
-                                    autoComplete="current-password"
-                                    minLength={6}
-                                />
-                                <FiLock className="absolute right-4 top-1/2 -translate-y-1/2 text-black/20" size={16} />
-                            </div>
-                            {validationErrors.password && (
-                                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-                                    <FiAlertCircle size={14} /> {validationErrors.password}
-                                </p>
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="pt-4">
-                        <button
-                            type="submit"
-                            disabled={isPending}
-                            className="w-full bg-black text-white rounded-xl py-4 font-black uppercase text-[11px] tracking-widest hover:bg-[#2563eb] transition-all flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed"
-                            aria-busy={isPending}
-                        >
-                            {isPending ? 'Authenticating...' : 'Sign In'}
-                            {!isPending && <FiArrowRight className="group-hover:translate-x-1 transition-transform" />}
-                        </button>
-                    </div>
-
-                    <div className="flex h-8 items-end space-x-1" aria-live="polite" aria-atomic="true">
-                        {errorMessage && (
-                            <p className="text-red-500 text-xs font-medium w-full text-center bg-red-50 py-2 rounded-lg flex items-center justify-center gap-2">
-                                <FiAlertCircle size={14} /> {errorMessage}
-                            </p>
-                        )}
-                    </div>
-                </form>
-
+                    ) : (
+                        services
+                            .filter(s => s.title.toLowerCase().includes(searchTerm.toLowerCase()))
+                            .filter(s => selectedCategory === 'all' || (s.category && (typeof s.category === 'string' ? s.category === selectedCategory : s.category._id === selectedCategory)))
+                            .map(service => (
+                                <div key={service._id} className="p-6 bg-white border border-black/[0.06] rounded-[2rem] shadow-sm flex items-center justify-between group hover:border-[#2563eb]/20 transition-all">
+                                    <div className="flex items-center gap-6">
+                                        <div className="w-20 h-14 bg-black/[0.02] rounded-xl overflow-hidden border border-black/[0.05] flex items-center justify-center">
+                                            {service?.icon && !service.image ? (
+                                                <div className="p-3 bg-blue-50 text-blue-600 rounded-lg">
+                                                    <FiLayers size={16} />
+                                                </div>
+                                            ) : service?.image ? (
+                                                <Image
+                                                    src={service.image}
+                                                    alt=""
+                                                    width={80}
+                                                    height={80}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                <FiList className="text-black/10" size={20} />
+                                            )}
+                                        </div>
+                                        <div>
+                                            <div className="flex items-center gap-2 mb-1">
+                                                {service.isActive ? (
+                                                    <span className="px-2 py-0.5 bg-green-50 text-green-600 text-[8px] font-black uppercase tracking-tighter rounded-full">Active</span>
+                                                ) : (
+                                                    <span className="px-2 py-0.5 bg-gray-50 text-gray-500 text-[8px] font-black uppercase tracking-tighter rounded-full">Inactive</span>
+                                                )}
+                                                {service.isDeleted && (
+                                                    <span className="px-2 py-0.5 bg-red-50 text-red-500 text-[8px] font-black uppercase tracking-tighter rounded-full">Deleted</span>
+                                                )}
+                                                {service.category && (
+                                                    <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[8px] font-black uppercase tracking-tighter rounded-full">
+                                                        {typeof service.category === 'string' ? 'Category' : service.category.name}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <h3 className="text-sm font-black text-black tracking-tight">{service.title}</h3>
+                                            <p className="text-[10px] text-black/40 font-medium truncate max-w-md">{service.description}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <button onClick={() => handleEditClick(service._id)} className="p-3 text-black/20 hover:text-[#2563eb] hover:bg-[#2563eb]/5 rounded-xl transition-all">
+                                            <FiEdit3 size={18} />
+                                        </button>
+                                        {service.isDeleted ? (
+                                            <button onClick={() => handleRestore(service._id)} className="p-3 text-black/20 hover:text-green-600 hover:bg-green-50 rounded-xl transition-all" title="Restore Service">
+                                                <FiRefreshCw size={18} />
+                                            </button>
+                                        ) : (
+                                            <button onClick={() => setItemToDelete({ id: service._id, permanent: false })} className="p-3 text-black/20 hover:text-orange-500 hover:bg-orange-50 rounded-xl transition-all" title="Soft Delete">
+                                                <FiArchive size={18} />
+                                            </button>
+                                        )}
+                                        <button onClick={() => setItemToDelete({ id: service._id, permanent: true })} className="p-3 text-black/20 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all">
+                                            <FiTrash2 size={18} />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))
+                    )}
+                </div>
             </div>
+
+            <ConfirmationModal
+                isOpen={itemToDelete !== null}
+                title={`${itemToDelete?.permanent ? 'Permanent' : 'Soft'} Delete Service`}
+                message={itemToDelete?.permanent
+                    ? "WARNING: This will PERMANENTLY remove this service. This action cannot be undone."
+                    : "Are you sure you want to move this service to trash?"}
+                confirmLabel={itemToDelete?.permanent ? "Yes, Delete Forever" : "Yes, Soft Delete"}
+                type={itemToDelete?.permanent ? 'danger' : 'info'}
+                onConfirm={handleDelete}
+                onCancel={() => setItemToDelete(null)}
+            />
         </div>
     );
-}
+};
+
+export default ServicesContent;

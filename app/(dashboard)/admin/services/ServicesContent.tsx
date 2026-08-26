@@ -3,11 +3,11 @@
 import ConfirmationModal from '@/components/global/ConfirmationModal';
 import PageHeader from '@/components/global/PageHeader';
 import { useToast } from '@/components/global/Toast';
-import { deleteService } from '@/services/serviceService';
+import { deleteService, restoreService } from '@/services/serviceService';
 import Image from 'next/image';
 import { redirect, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { FiEdit3, FiLayers, FiList, FiPlus, FiSearch, FiTrash2, FiX } from 'react-icons/fi';
+import { FiArchive, FiEdit3, FiLayers, FiList, FiPlus, FiRefreshCw, FiSearch, FiTrash2, FiX } from 'react-icons/fi';
 
 interface ServicesContentProps {
     initialServices: any[];
@@ -77,6 +77,16 @@ const ServicesContent = ({ initialServices }: ServicesContentProps) => {
         setItemToDelete(null);
     };
 
+    const handleRestore = async (id: string) => {
+        const res = await restoreService(id);
+        if (res.success) {
+            showToast(res.message, 'success');
+            fetchServices();
+        } else {
+            showToast(res.message, 'error');
+        }
+    };
+
     return (
         <div className="p-3 lg:p-6 bg-[#fcfcfc] min-h-screen">
             <PageHeader
@@ -144,12 +154,15 @@ const ServicesContent = ({ initialServices }: ServicesContentProps) => {
                                         <div>
                                             <div className="flex items-center gap-2 mb-1">
                                                 {service.isActive ? (
-                                                    <span className="px-2 py-0.5 bg-green-50 text-green-600 text-[8px] font-black uppercase tracking-tighter rounded-full">Active</span>
+                                                    <span className="px-2 py-0.5 bg-green-50 text-green-600 text-[10px] font-black uppercase tracking-tighter rounded-full">Active</span>
                                                 ) : (
-                                                    <span className="px-2 py-0.5 bg-gray-50 text-gray-500 text-[8px] font-black uppercase tracking-tighter rounded-full">Inactive</span>
+                                                    <span className="px-2 py-0.5 bg-gray-50 text-gray-500 text-[10px] font-black uppercase tracking-tighter rounded-full">Inactive</span>
+                                                )}
+                                                {service.isDeleted && (
+                                                    <span className="px-2 py-0.5 bg-red-50 text-red-500 text-[10px] font-black uppercase tracking-tighter rounded-full">Deleted</span>
                                                 )}
                                                 {service.category && (
-                                                    <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[8px] font-black uppercase tracking-tighter rounded-full">
+                                                    <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-black uppercase tracking-tighter rounded-full">
                                                         {typeof service.category === 'string' ? 'Category' : service.category.name}
                                                     </span>
                                                 )}
@@ -162,11 +175,17 @@ const ServicesContent = ({ initialServices }: ServicesContentProps) => {
                                         <button onClick={() => handleEditClick(service._id)} className="p-3 text-black/20 hover:text-[#2563eb] hover:bg-[#2563eb]/5 rounded-xl transition-all">
                                             <FiEdit3 size={18} />
                                         </button>
-                                        <button onClick={() => setItemToDelete({ id: service._id, permanent: false })} className="p-3 text-black/20 hover:text-orange-500 hover:bg-orange-50 rounded-xl transition-all">
-                                            <FiTrash2 size={18} />
-                                        </button>
+                                        {service.isDeleted ? (
+                                            <button onClick={() => handleRestore(service._id)} className="p-3 text-black/20 hover:text-green-600 hover:bg-green-50 rounded-xl transition-all" title="Restore Service">
+                                                <FiRefreshCw size={18} />
+                                            </button>
+                                        ) : (
+                                            <button onClick={() => setItemToDelete({ id: service._id, permanent: false })} className="p-3 text-black/20 hover:text-orange-500 hover:bg-orange-50 rounded-xl transition-all" title="Soft Delete">
+                                                <FiArchive size={18} />
+                                            </button>
+                                        )}
                                         <button onClick={() => setItemToDelete({ id: service._id, permanent: true })} className="p-3 text-black/20 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all">
-                                            <FiX size={18} />
+                                            <FiTrash2 size={18} />
                                         </button>
                                     </div>
                                 </div>
