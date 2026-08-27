@@ -81,21 +81,21 @@ const CategoriesContent = ({ initialCategories }: CategoriesContentProps) => {
                                         <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl">
                                             <FiLayers size={20} />
                                         </div>
-                                        <div className="flex gap-1 transition-opacity">
-                                            <button onClick={() => handleEditClick(cat._id)} className="p-2 text-black/10 hover:text-blue-600">
-                                                <FiEdit3 size={16} />
+                                        <div className="flex items-center gap-2">
+                                            <button onClick={() => handleEditClick(cat._id)} className="p-3 text-black/20 hover:text-[#2563eb] hover:bg-[#2563eb]/5 rounded-xl transition-all">
+                                                <FiEdit3 size={18} />
                                             </button>
                                             {cat.isDeleted ? (
-                                                <button onClick={() => handleRestore(cat._id)} className="p-2 text-black/10 hover:text-green-600" title="Restore Category">
-                                                    <FiRefreshCw size={16} />
+                                                <button onClick={() => handleRestore(cat._id)} className="p-3 text-black/20 hover:text-green-600 hover:bg-green-50 rounded-xl transition-all" title="Restore Category">
+                                                    <FiRefreshCw size={18} />
                                                 </button>
                                             ) : (
-                                                <button onClick={() => setItemToDelete({ id: cat._id, permanent: false })} className="p-2 text-black/10 hover:text-orange-500" title="Soft Delete">
-                                                    <FiArchive size={16} />
+                                                <button onClick={() => setItemToDelete({ id: cat._id, permanent: false })} className="p-3 text-black/20 hover:text-orange-500 hover:bg-orange-50 rounded-xl transition-all" title="Soft Delete">
+                                                    <FiArchive size={18} />
                                                 </button>
                                             )}
-                                            <button onClick={() => setItemToDelete({ id: cat._id, permanent: true })} className="p-2 text-black/10 hover:text-red-500" title="Permanent Delete">
-                                                <FiTrash2 size={16} />
+                                            <button onClick={() => setItemToDelete({ id: cat._id, permanent: true })} className="p-3 text-black/20 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all" title="Permanent Delete">
+                                                <FiTrash2 size={18} />
                                             </button>
                                         </div>
                                     </div>

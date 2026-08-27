@@ -103,7 +103,7 @@ export async function restoreBlogCategory(id: string) {
             isDeleted: false,
             $unset: { deletedAt: 1 }
         });
-
+        
         // Also restore associated blog posts
         await BlogPost.updateMany(
             { category: id, isDeleted: true },
@@ -309,7 +309,10 @@ export async function deleteBlogPost(id: string, permanent = false) {
     }
 }
 
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> Stashed changes
 export async function restoreBlogPost(id: string) {
     await dbConnect();
     try {
@@ -321,7 +324,11 @@ export async function restoreBlogPost(id: string) {
             isDeleted: false,
             $unset: { deletedAt: 1 }
         });
+<<<<<<< Updated upstream
 
+=======
+        
+>>>>>>> Stashed changes
         // Optionally, re-add to sitemap if needed, since soft-delete removes it
         const blogUrl = `/blogs/${post.slug}`;
         await updateSitemapLink("Blogs", {
