@@ -31,8 +31,7 @@ import {
     $isHeadingNode,
     HeadingTagType,
 } from "@lexical/rich-text";
-import { $setBlocksType } from "@lexical/selection";
-import { $patchStyleText } from "@lexical/selection";
+import { $setBlocksType, $patchStyleText } from "@lexical/selection";
 import {
     Bold,
     Italic,
@@ -56,7 +55,6 @@ import {
     Heading6,
     Pilcrow,
     ChevronDown,
-    Palette,
     Highlighter,
     Superscript,
     Subscript,
@@ -119,6 +117,11 @@ const HEADING_OPTIONS: { label: string; value: string; icon: React.ReactNode }[]
     { label: "Heading 6", value: "h6", icon: <Heading6 size={14} /> },
 ];
 
+// Prevents toolbar buttons from stealing editor focus/selection
+const preventFocusLoss = (e: React.MouseEvent) => {
+    e.preventDefault();
+};
+
 // --- Dropdown wrapper component ---
 function ToolbarDropdown({
     trigger,
@@ -146,6 +149,7 @@ function ToolbarDropdown({
         <div ref={ref} className="relative">
             <button
                 type="button"
+                onMouseDown={preventFocusLoss}
                 onClick={() => setOpen(!open)}
                 className="flex items-center gap-1 px-2 py-1.5 hover:bg-black/[0.05] rounded-lg transition-colors text-xs font-medium"
                 title={title}
@@ -154,7 +158,7 @@ function ToolbarDropdown({
                 <ChevronDown size={12} className={`transition-transform ${open ? "rotate-180" : ""}`} />
             </button>
             {open && (
-                <div className="absolute top-full left-0 mt-1 bg-white border border-black/[0.08] rounded-xl shadow-lg shadow-black/[0.08] z-50 min-w-[140px] p-1 animate-in fade-in-0 zoom-in-95 duration-150">
+                <div className="absolute top-full left-0 mt-1 bg-white border border-black/[0.08] rounded-xl shadow-lg shadow-black/[0.08] z-[9999] min-w-[140px] p-1">
                     {children}
                 </div>
             )}
@@ -181,6 +185,7 @@ function ColorPickerGrid({
                     key={c.label}
                     type="button"
                     title={c.label}
+                    onMouseDown={preventFocusLoss}
                     onClick={() => {
                         onSelect(c.value);
                         onClose();
@@ -192,7 +197,14 @@ function ColorPickerGrid({
                     }`}
                     style={{
                         backgroundColor: c.value || "#ffffff",
-                        ...(c.value === "" ? { backgroundImage: "linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%), linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%)", backgroundSize: "8px 8px", backgroundPosition: "0 0, 4px 4px" } : {}),
+                        ...(c.value === ""
+                            ? {
+                                  backgroundImage:
+                                      "linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%), linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%)",
+                                  backgroundSize: "8px 8px",
+                                  backgroundPosition: "0 0, 4px 4px",
+                              }
+                            : {}),
                     }}
                 />
             ))}
@@ -233,6 +245,7 @@ function ColorDropdown({
         <div ref={ref} className="relative">
             <button
                 type="button"
+                onMouseDown={preventFocusLoss}
                 onClick={() => setOpen(!open)}
                 className="flex flex-col items-center p-1.5 hover:bg-black/[0.05] rounded-lg transition-colors"
                 title={title}
@@ -246,7 +259,7 @@ function ColorDropdown({
                 />
             </button>
             {open && (
-                <div className="absolute top-full left-0 mt-1 bg-white border border-black/[0.08] rounded-xl shadow-lg shadow-black/[0.08] z-50 animate-in fade-in-0 zoom-in-95 duration-150">
+                <div className="absolute top-full left-0 mt-1 bg-white border border-black/[0.08] rounded-xl shadow-lg shadow-black/[0.08] z-[9999]">
                     <ColorPickerGrid
                         colors={colors}
                         activeColor={activeColor}
@@ -258,7 +271,6 @@ function ColorDropdown({
         </div>
     );
 }
-
 
 export default function Toolbar() {
     const [editor] = useLexicalComposerContext();
@@ -299,18 +311,22 @@ export default function Toolbar() {
                 setBlockType(element.getTag());
             } else if ($isListNode(element)) {
                 const parentList = $getNearestNodeOfType(anchorNode, ListNode);
-                const type = parentList ? parentList.getListType() : element.getListType();
+                const type = parentList
+                    ? parentList.getListType()
+                    : element.getListType();
                 setBlockType(type === "number" ? "ol" : "ul");
             } else {
                 setBlockType("paragraph");
             }
 
-            // Detect font color
+            // Detect font color from inline style
             const style = selection.style;
             const colorMatch = style.match(/(?:^|;\s*)color:\s*([^;]+)/);
             setFontColor(colorMatch ? colorMatch[1].trim() : "");
 
-            const bgMatch = style.match(/(?:^|;\s*)background-color:\s*([^;]+)/);
+            const bgMatch = style.match(
+                /(?:^|;\s*)background-color:\s*([^;]+)/
+            );
             setBgColor(bgMatch ? bgMatch[1].trim() : "");
 
             const fsMatch = style.match(/(?:^|;\s*)font-size:\s*([^;]+)/);
@@ -398,7 +414,9 @@ export default function Toolbar() {
         editor.update(() => {
             const selection = $getSelection();
             if ($isRangeSelection(selection)) {
-                $patchStyleText(selection, { "background-color": color || null });
+                $patchStyleText(selection, {
+                    "background-color": color || null,
+                });
             }
         });
         setBgColor(color);
@@ -414,15 +432,23 @@ export default function Toolbar() {
         setFontSize(size);
     };
 
-    const currentBlock = HEADING_OPTIONS.find((h) => h.value === blockType) || HEADING_OPTIONS[0];
+    const currentBlock =
+        HEADING_OPTIONS.find((h) => h.value === blockType) ||
+        HEADING_OPTIONS[0];
 
     return (
-        <div className="flex items-center gap-0.5 p-1.5 bg-black/[0.02] border border-black/[0.06] rounded-xl overflow-x-auto scrollbar-none flex-wrap">
+        <div
+            className="flex items-center gap-0.5 p-1.5 bg-black/[0.02] border border-black/[0.06] rounded-xl overflow-x-auto scrollbar-none flex-wrap"
+            onMouseDown={preventFocusLoss}
+        >
             {/* Undo / Redo */}
             <button
                 type="button"
                 disabled={!canUndo}
-                onClick={() => editor.dispatchCommand(UNDO_COMMAND, undefined)}
+                onMouseDown={preventFocusLoss}
+                onClick={() =>
+                    editor.dispatchCommand(UNDO_COMMAND, undefined)
+                }
                 className="p-2 hover:bg-black/[0.05] disabled:opacity-20 rounded-lg transition-colors"
                 title="Undo"
             >
@@ -431,7 +457,10 @@ export default function Toolbar() {
             <button
                 type="button"
                 disabled={!canRedo}
-                onClick={() => editor.dispatchCommand(REDO_COMMAND, undefined)}
+                onMouseDown={preventFocusLoss}
+                onClick={() =>
+                    editor.dispatchCommand(REDO_COMMAND, undefined)
+                }
                 className="p-2 hover:bg-black/[0.05] disabled:opacity-20 rounded-lg transition-colors"
                 title="Redo"
             >
@@ -446,7 +475,9 @@ export default function Toolbar() {
                 trigger={
                     <span className="flex items-center gap-1.5">
                         {currentBlock.icon}
-                        <span className="hidden sm:inline">{currentBlock.label}</span>
+                        <span className="hidden sm:inline">
+                            {currentBlock.label}
+                        </span>
                     </span>
                 }
             >
@@ -454,9 +485,12 @@ export default function Toolbar() {
                     <button
                         key={opt.value}
                         type="button"
+                        onMouseDown={preventFocusLoss}
                         onClick={() => formatHeading(opt.value)}
                         className={`flex items-center gap-2 w-full px-3 py-2 text-xs rounded-lg hover:bg-black/[0.04] transition-colors text-left ${
-                            blockType === opt.value ? "bg-[#2563eb]/[0.08] text-[#2563eb] font-semibold" : ""
+                            blockType === opt.value
+                                ? "bg-[#2563eb]/[0.08] text-[#2563eb] font-semibold"
+                                : ""
                         }`}
                     >
                         {opt.icon}
@@ -473,15 +507,20 @@ export default function Toolbar() {
                 trigger={
                     <span className="flex items-center gap-1">
                         <Type size={14} />
-                        <span className="text-[10px] tabular-nums">{fontSize || "—"}</span>
+                        <span className="text-[10px] tabular-nums">
+                            {fontSize || "—"}
+                        </span>
                     </span>
                 }
             >
                 <button
                     type="button"
+                    onMouseDown={preventFocusLoss}
                     onClick={() => applyFontSize("")}
                     className={`flex items-center gap-2 w-full px-3 py-2 text-xs rounded-lg hover:bg-black/[0.04] transition-colors text-left ${
-                        !fontSize ? "bg-[#2563eb]/[0.08] text-[#2563eb] font-semibold" : ""
+                        !fontSize
+                            ? "bg-[#2563eb]/[0.08] text-[#2563eb] font-semibold"
+                            : ""
                     }`}
                 >
                     <Minus size={12} />
@@ -491,12 +530,17 @@ export default function Toolbar() {
                     <button
                         key={fs.value}
                         type="button"
+                        onMouseDown={preventFocusLoss}
                         onClick={() => applyFontSize(fs.value)}
                         className={`flex items-center gap-2 w-full px-3 py-2 text-xs rounded-lg hover:bg-black/[0.04] transition-colors text-left ${
-                            fontSize === fs.value ? "bg-[#2563eb]/[0.08] text-[#2563eb] font-semibold" : ""
+                            fontSize === fs.value
+                                ? "bg-[#2563eb]/[0.08] text-[#2563eb] font-semibold"
+                                : ""
                         }`}
                     >
-                        <span style={{ fontSize: fs.value, lineHeight: "1" }}>{fs.label}</span>
+                        <span style={{ fontSize: fs.value, lineHeight: "1" }}>
+                            {fs.label}
+                        </span>
                     </button>
                 ))}
             </ToolbarDropdown>
@@ -506,40 +550,68 @@ export default function Toolbar() {
             {/* Text format buttons */}
             <button
                 type="button"
-                onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "bold")}
-                className={`p-2 hover:bg-black/[0.05] rounded-lg transition-colors ${isBold ? "bg-black/[0.1] text-[#2563eb]" : ""}`}
+                onMouseDown={preventFocusLoss}
+                onClick={() =>
+                    editor.dispatchCommand(FORMAT_TEXT_COMMAND, "bold")
+                }
+                className={`p-2 hover:bg-black/[0.05] rounded-lg transition-colors ${
+                    isBold ? "bg-black/[0.1] text-[#2563eb]" : ""
+                }`}
                 title="Bold"
             >
                 <Bold size={16} />
             </button>
             <button
                 type="button"
-                onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "italic")}
-                className={`p-2 hover:bg-black/[0.05] rounded-lg transition-colors ${isItalic ? "bg-black/[0.1] text-[#2563eb]" : ""}`}
+                onMouseDown={preventFocusLoss}
+                onClick={() =>
+                    editor.dispatchCommand(FORMAT_TEXT_COMMAND, "italic")
+                }
+                className={`p-2 hover:bg-black/[0.05] rounded-lg transition-colors ${
+                    isItalic ? "bg-black/[0.1] text-[#2563eb]" : ""
+                }`}
                 title="Italic"
             >
                 <Italic size={16} />
             </button>
             <button
                 type="button"
-                onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "underline")}
-                className={`p-2 hover:bg-black/[0.05] rounded-lg transition-colors ${isUnderline ? "bg-black/[0.1] text-[#2563eb]" : ""}`}
+                onMouseDown={preventFocusLoss}
+                onClick={() =>
+                    editor.dispatchCommand(FORMAT_TEXT_COMMAND, "underline")
+                }
+                className={`p-2 hover:bg-black/[0.05] rounded-lg transition-colors ${
+                    isUnderline ? "bg-black/[0.1] text-[#2563eb]" : ""
+                }`}
                 title="Underline"
             >
                 <Underline size={16} />
             </button>
             <button
                 type="button"
-                onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "strikethrough")}
-                className={`p-2 hover:bg-black/[0.05] rounded-lg transition-colors ${isStrikethrough ? "bg-black/[0.1] text-[#2563eb]" : ""}`}
+                onMouseDown={preventFocusLoss}
+                onClick={() =>
+                    editor.dispatchCommand(
+                        FORMAT_TEXT_COMMAND,
+                        "strikethrough"
+                    )
+                }
+                className={`p-2 hover:bg-black/[0.05] rounded-lg transition-colors ${
+                    isStrikethrough ? "bg-black/[0.1] text-[#2563eb]" : ""
+                }`}
                 title="Strikethrough"
             >
                 <Strikethrough size={16} />
             </button>
             <button
                 type="button"
-                onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "code")}
-                className={`p-2 hover:bg-black/[0.05] rounded-lg transition-colors ${isCode ? "bg-black/[0.1] text-[#2563eb]" : ""}`}
+                onMouseDown={preventFocusLoss}
+                onClick={() =>
+                    editor.dispatchCommand(FORMAT_TEXT_COMMAND, "code")
+                }
+                className={`p-2 hover:bg-black/[0.05] rounded-lg transition-colors ${
+                    isCode ? "bg-black/[0.1] text-[#2563eb]" : ""
+                }`}
                 title="Inline Code"
             >
                 <Code size={16} />
@@ -550,16 +622,26 @@ export default function Toolbar() {
             {/* Superscript / Subscript */}
             <button
                 type="button"
-                onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "superscript")}
-                className={`p-2 hover:bg-black/[0.05] rounded-lg transition-colors ${isSuperscript ? "bg-black/[0.1] text-[#2563eb]" : ""}`}
+                onMouseDown={preventFocusLoss}
+                onClick={() =>
+                    editor.dispatchCommand(FORMAT_TEXT_COMMAND, "superscript")
+                }
+                className={`p-2 hover:bg-black/[0.05] rounded-lg transition-colors ${
+                    isSuperscript ? "bg-black/[0.1] text-[#2563eb]" : ""
+                }`}
                 title="Superscript"
             >
                 <Superscript size={16} />
             </button>
             <button
                 type="button"
-                onClick={() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, "subscript")}
-                className={`p-2 hover:bg-black/[0.05] rounded-lg transition-colors ${isSubscript ? "bg-black/[0.1] text-[#2563eb]" : ""}`}
+                onMouseDown={preventFocusLoss}
+                onClick={() =>
+                    editor.dispatchCommand(FORMAT_TEXT_COMMAND, "subscript")
+                }
+                className={`p-2 hover:bg-black/[0.05] rounded-lg transition-colors ${
+                    isSubscript ? "bg-black/[0.1] text-[#2563eb]" : ""
+                }`}
                 title="Subscript"
             >
                 <Subscript size={16} />
@@ -592,16 +674,32 @@ export default function Toolbar() {
             {/* Lists */}
             <button
                 type="button"
-                onClick={() => editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined)}
-                className={`p-2 hover:bg-black/[0.05] rounded-lg transition-colors ${blockType === "ul" ? "bg-black/[0.1] text-[#2563eb]" : ""}`}
+                onMouseDown={preventFocusLoss}
+                onClick={() =>
+                    editor.dispatchCommand(
+                        INSERT_UNORDERED_LIST_COMMAND,
+                        undefined
+                    )
+                }
+                className={`p-2 hover:bg-black/[0.05] rounded-lg transition-colors ${
+                    blockType === "ul" ? "bg-black/[0.1] text-[#2563eb]" : ""
+                }`}
                 title="Bullet List"
             >
                 <List size={16} />
             </button>
             <button
                 type="button"
-                onClick={() => editor.dispatchCommand(INSERT_ORDERED_LIST_COMMAND, undefined)}
-                className={`p-2 hover:bg-black/[0.05] rounded-lg transition-colors ${blockType === "ol" ? "bg-black/[0.1] text-[#2563eb]" : ""}`}
+                onMouseDown={preventFocusLoss}
+                onClick={() =>
+                    editor.dispatchCommand(
+                        INSERT_ORDERED_LIST_COMMAND,
+                        undefined
+                    )
+                }
+                className={`p-2 hover:bg-black/[0.05] rounded-lg transition-colors ${
+                    blockType === "ol" ? "bg-black/[0.1] text-[#2563eb]" : ""
+                }`}
                 title="Numbered List"
             >
                 <ListOrdered size={16} />
@@ -612,8 +710,11 @@ export default function Toolbar() {
             {/* Link */}
             <button
                 type="button"
+                onMouseDown={preventFocusLoss}
                 onClick={insertLink}
-                className={`p-2 hover:bg-black/[0.05] rounded-lg transition-colors ${isLink ? "bg-black/[0.1] text-[#2563eb]" : ""}`}
+                className={`p-2 hover:bg-black/[0.05] rounded-lg transition-colors ${
+                    isLink ? "bg-black/[0.1] text-[#2563eb]" : ""
+                }`}
                 title="Insert Link"
             >
                 <Link size={16} />
@@ -624,7 +725,10 @@ export default function Toolbar() {
             {/* Alignment */}
             <button
                 type="button"
-                onClick={() => editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, "left")}
+                onMouseDown={preventFocusLoss}
+                onClick={() =>
+                    editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, "left")
+                }
                 className="p-2 hover:bg-black/[0.05] rounded-lg transition-colors"
                 title="Align Left"
             >
@@ -632,7 +736,10 @@ export default function Toolbar() {
             </button>
             <button
                 type="button"
-                onClick={() => editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, "center")}
+                onMouseDown={preventFocusLoss}
+                onClick={() =>
+                    editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, "center")
+                }
                 className="p-2 hover:bg-black/[0.05] rounded-lg transition-colors"
                 title="Align Center"
             >
@@ -640,7 +747,10 @@ export default function Toolbar() {
             </button>
             <button
                 type="button"
-                onClick={() => editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, "right")}
+                onMouseDown={preventFocusLoss}
+                onClick={() =>
+                    editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, "right")
+                }
                 className="p-2 hover:bg-black/[0.05] rounded-lg transition-colors"
                 title="Align Right"
             >
@@ -648,7 +758,10 @@ export default function Toolbar() {
             </button>
             <button
                 type="button"
-                onClick={() => editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, "justify")}
+                onMouseDown={preventFocusLoss}
+                onClick={() =>
+                    editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, "justify")
+                }
                 className="p-2 hover:bg-black/[0.05] rounded-lg transition-colors"
                 title="Justify"
             >

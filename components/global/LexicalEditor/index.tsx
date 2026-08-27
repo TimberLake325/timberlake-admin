@@ -79,7 +79,7 @@ export default function LexicalEditor({ value, onChange, placeholder }: LexicalE
 
     return (
         <LexicalComposer initialConfig={initialConfig}>
-            <div className="relative border border-black/[0.06] rounded-[2rem] bg-white overflow-hidden focus-within:border-[#2563eb]/30 transition-all">
+            <div className="relative border border-black/[0.06] rounded-[2rem] bg-white focus-within:border-[#2563eb]/30 transition-all">
                 <div className="p-2 border-b border-black/[0.03]">
                     <Toolbar />
                 </div>
