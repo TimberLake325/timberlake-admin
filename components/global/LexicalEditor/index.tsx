@@ -89,6 +89,10 @@ export default function LexicalEditor({ value, onChange, placeholder }: LexicalE
                             <ContentEditable className="min-h-[500px] outline-none p-12 text-sm text-black/70 prose prose-slate max-w-none 
                                 [&_h1]:text-4xl [&_h1]:font-black [&_h1]:mb-8 [&_h1]:font-heading
                                 [&_h2]:text-2xl [&_h2]:font-black [&_h2]:mt-12 [&_h2]:mb-6
+                                [&_h3]:text-xl [&_h3]:font-bold [&_h3]:mt-10 [&_h3]:mb-4
+                                [&_h4]:text-lg [&_h4]:font-bold [&_h4]:mt-8 [&_h4]:mb-3
+                                [&_h5]:text-base [&_h5]:font-semibold [&_h5]:mt-6 [&_h5]:mb-2
+                                [&_h6]:text-sm [&_h6]:font-semibold [&_h6]:mt-4 [&_h6]:mb-2 [&_h6]:uppercase [&_h6]:tracking-wide [&_h6]:text-black/50
                                 [&_p]:text-base [&_p]:leading-relaxed [&_p]:mb-6
                                 [&_section]:mb-16
                                 [&_.privacy-header]:mb-16
