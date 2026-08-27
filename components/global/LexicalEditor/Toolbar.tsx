@@ -438,7 +438,7 @@ export default function Toolbar() {
 
     return (
         <div
-            className="flex items-center gap-0.5 p-1.5 bg-black/[0.02] border border-black/[0.06] rounded-xl overflow-x-auto scrollbar-none flex-wrap"
+            className="flex items-center gap-0.5 p-1.5 bg-black/[0.02] border border-black/[0.06] rounded-xl flex-wrap"
             onMouseDown={preventFocusLoss}
         >
             {/* Undo / Redo */}
